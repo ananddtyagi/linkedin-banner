@@ -146,11 +146,15 @@ const ProfileBanner = () => {
     canvas.width = previewCanvasRef.current.width;
     canvas.height = previewCanvasRef.current.height;
 
-    // Get the circular region only
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = canvas.width / 2;
-    const bannerInnerRadius = radius * 0.75;
+
+    // Adjusted banner parameters
+    const bannerInnerRadius = radius * 0.7;  // Increased inner radius
+    const startAngle = Math.PI * 0.25;         // Earlier start angle
+    const endAngle = Math.PI * 1.15;          // Later end angle
+    const fadeLength = Math.PI * 0.2;         // Longer fade length
 
     ctx.save();
     // Create clipping path for circle
@@ -161,56 +165,55 @@ const ProfileBanner = () => {
     ctx.drawImage(previewCanvasRef.current, 0, 0);
     ctx.restore();
 
-    // Draw the banner arc
+    // Draw the solid center portion of the banner
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI * 0.15, Math.PI * 1.1, false);
-    ctx.arc(centerX, centerY, bannerInnerRadius, Math.PI, Math.PI * 0.25, true);
-    ctx.closePath();
-
-    // Create linear gradients for the start and end sections
-    const startGradient = ctx.createLinearGradient(
-      centerX + radius * Math.cos(Math.PI * 0.15),
-      centerY + radius * Math.sin(Math.PI * 0.15),
-      centerX + radius * Math.cos(Math.PI * 0.4),
-      centerY + radius * Math.sin(Math.PI * 0.4)
-    );
-    startGradient.addColorStop(0, `${bannerColor}00`);    // Start transparent
-    startGradient.addColorStop(1, bannerColor);           // Fade to solid
-
-    const endGradient = ctx.createLinearGradient(
-      centerX + radius * Math.cos(Math.PI * 0.85),
-      centerY + radius * Math.sin(Math.PI * 0.85),
-      centerX + radius * Math.cos(Math.PI * 1.1),
-      centerY + radius * Math.sin(Math.PI * 1.1)
-    );
-    endGradient.addColorStop(0, bannerColor);            // Start solid
-    endGradient.addColorStop(1, `${bannerColor}00`);     // Fade to transparent
-
-    // Draw start section (with fade)
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI * 0.15, Math.PI * 0.4, false);
-    ctx.arc(centerX, centerY, bannerInnerRadius, Math.PI * 0.4, Math.PI * 0.25, true);
-    ctx.closePath();
-    ctx.fillStyle = startGradient;
-    ctx.fill();
-
-    // Draw middle section (solid)
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI * 0.4, Math.PI * 0.85, false);
-    ctx.arc(centerX, centerY, bannerInnerRadius, Math.PI * 0.85, Math.PI * 0.4, true);
+    ctx.arc(centerX, centerY, radius, startAngle + fadeLength, endAngle - fadeLength, false);
+    ctx.arc(centerX, centerY, bannerInnerRadius, endAngle - fadeLength, startAngle + fadeLength, true);
     ctx.closePath();
     ctx.fillStyle = bannerColor;
     ctx.fill();
 
-    // Draw end section (with fade)
+    // Create and draw the start gradient
+    const startGradient = ctx.createRadialGradient(
+      centerX + radius * Math.cos(startAngle + fadeLength),
+      centerY + radius * Math.sin(startAngle + fadeLength),
+      0,
+      centerX + radius * Math.cos(startAngle + fadeLength),
+      centerY + radius * Math.sin(startAngle + fadeLength),
+      radius * fadeLength
+    );
+    startGradient.addColorStop(0, bannerColor);
+    startGradient.addColorStop(0.5, bannerColor);
+    startGradient.addColorStop(1, `${bannerColor}00`);
+
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI * 0.85, Math.PI * 1.1, false);
-    ctx.arc(centerX, centerY, bannerInnerRadius, Math.PI, Math.PI * 0.85, true);
+    ctx.arc(centerX, centerY, radius, startAngle, startAngle + fadeLength, false);
+    ctx.arc(centerX, centerY, bannerInnerRadius, startAngle + fadeLength, startAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = startGradient;
+    ctx.fill();
+
+    // Create and draw the end gradient
+    const endGradient = ctx.createRadialGradient(
+      centerX + radius * Math.cos(endAngle - fadeLength),
+      centerY + radius * Math.sin(endAngle - fadeLength),
+      0,
+      centerX + radius * Math.cos(endAngle - fadeLength),
+      centerY + radius * Math.sin(endAngle - fadeLength),
+      radius * fadeLength
+    );
+    endGradient.addColorStop(0, bannerColor);
+    endGradient.addColorStop(0.5, bannerColor);
+    endGradient.addColorStop(1, `${bannerColor}00`);
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, endAngle - fadeLength, endAngle, false);
+    ctx.arc(centerX, centerY, bannerInnerRadius, endAngle, endAngle - fadeLength, true);
     ctx.closePath();
     ctx.fillStyle = endGradient;
     ctx.fill();
 
-    // Add text along the arc
+    // Add text (keeping your existing text code)
     ctx.save();
     const fontSize = radius * 0.1;
     ctx.font = `bold ${fontSize}px Arial`;
@@ -219,16 +222,13 @@ const ProfileBanner = () => {
     ctx.textBaseline = "middle";
 
     const textRadius = radius * 0.9;
-    const startAngle = Math.PI * 0.25;
+    const textStartAngle = Math.PI * 0.25;
     const arcLength = Math.PI * 0.65;
     const chars = bannerText.split('').reverse();
-
-    // Calculate the angle for each character
     const anglePerChar = arcLength / (chars.length - 1);
 
-    // Draw each character
     chars.forEach((char, i) => {
-      const angle = startAngle + (anglePerChar * i);
+      const angle = textStartAngle + (anglePerChar * i);
       const x = centerX + textRadius * Math.cos(angle);
       const y = centerY + textRadius * Math.sin(angle);
 
@@ -240,7 +240,7 @@ const ProfileBanner = () => {
     });
 
     ctx.restore();
-  };
+  }
 
   useEffect(() => {
     updateFinalCanvas();
