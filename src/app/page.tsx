@@ -153,8 +153,8 @@ const ProfileBanner = () => {
     // Adjusted banner parameters
     const bannerInnerRadius = radius * 0.7;  // Increased inner radius
     const startAngle = Math.PI * 0.25;         // Earlier start angle
-    const endAngle = Math.PI * 1.15;          // Later end angle
-    const fadeLength = Math.PI * 0.2;         // Longer fade length
+    const endAngle = Math.PI * 1.15;           // Later end angle
+    const fadeLength = Math.PI * 0.2;          // Longer fade length
 
     ctx.save();
     // Create clipping path for circle
@@ -213,34 +213,69 @@ const ProfileBanner = () => {
     ctx.fillStyle = endGradient;
     ctx.fill();
 
-    // Add text (keeping your existing text code)
+    // -----------------------------
+    // NEW TEXT DRAWING CODE STARTS
+    // -----------------------------
     ctx.save();
-    const fontSize = radius * 0.1;
+
+    // Determine the arc available for banner text.
+    // (This is the banner arc without the faded parts.)
+    const bannerStartAngle = startAngle + fadeLength;
+    const bannerEndAngle = endAngle - fadeLength;
+    const availableAngle = bannerEndAngle - bannerStartAngle;
+    const arcMid = (bannerStartAngle + bannerEndAngle) / 2;
+
+    // Set the text radius to be centered within the banner:
+    // midway between the banner's inner radius and the outer circle.
+    const textRadius = (bannerInnerRadius + radius) / 2;
+
+    // Optionally, set the font size based on the banner’s height.
+    const bannerHeight = radius - bannerInnerRadius;
+    const fontSize = bannerHeight * 0.5; // adjust as needed
     ctx.font = `bold ${fontSize}px Arial`;
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const textRadius = radius * 0.9;
-    const textStartAngle = Math.PI * 0.25;
-    const arcLength = Math.PI * 0.65;
-    const chars = bannerText.split('').reverse();
-    const anglePerChar = arcLength / (chars.length - 1);
-
-    chars.forEach((char, i) => {
-      const angle = textStartAngle + (anglePerChar * i);
+    if (bannerText.length === 0) {
+      // nothing to draw
+    } else if (bannerText.length === 1) {
+      // For a single character, simply place it at the midpoint of the arc.
+      const angle = arcMid;
       const x = centerX + textRadius * Math.cos(angle);
       const y = centerY + textRadius * Math.sin(angle);
-
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(angle + Math.PI * 1.5);
-      ctx.fillText(char, 0, 0);
+      // Rotate so that the text is tangential to the circle.
+      ctx.rotate(angle - Math.PI / 2);
+      ctx.fillText(bannerText, 0, 0);
       ctx.restore();
-    });
+    } else {
+      // For multiple characters, use (say) 90% of the available arc so that the text
+      // doesn’t run right to the edge. This gives a small margin.
+      const totalTextAngle = availableAngle * 0.9;
+      const letterSpacing = totalTextAngle / (bannerText.length - 1);
+      // Set the starting angle so that the text is centered along the banner.
+      const startTextAngle = arcMid - totalTextAngle / 2;
 
+      for (let i = 0; i < bannerText.length; i++) {
+        const char = bannerText[bannerText.length - i - 1];
+        const angle = startTextAngle + i * letterSpacing;
+        const x = centerX + textRadius * Math.cos(angle);
+        const y = centerY + textRadius * Math.sin(angle);
+        ctx.save();
+        ctx.translate(x, y);
+        // Rotate so the character is oriented tangentially.
+        ctx.rotate(angle + Math.PI * 1.5);
+        ctx.fillText(char, 0, 0);
+        ctx.restore();
+      }
+    }
     ctx.restore();
-  }
+    // -----------------------------
+    // NEW TEXT DRAWING CODE ENDS
+    // -----------------------------
+  };
 
   useEffect(() => {
     updateFinalCanvas();
