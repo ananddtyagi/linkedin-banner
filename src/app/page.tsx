@@ -213,16 +213,12 @@ const ProfileBanner = () => {
     ctx.fillStyle = endGradient;
     ctx.fill();
 
-    // -----------------------------
-    // NEW TEXT DRAWING CODE STARTS
-    // -----------------------------
     ctx.save();
 
     // Determine the arc available for banner text.
     // (This is the banner arc without the faded parts.)
     const bannerStartAngle = startAngle + fadeLength;
     const bannerEndAngle = endAngle - fadeLength;
-    const availableAngle = bannerEndAngle - bannerStartAngle;
     const arcMid = (bannerStartAngle + bannerEndAngle) / 2;
 
     // Set the text radius to be centered within the banner:
@@ -251,30 +247,26 @@ const ProfileBanner = () => {
       ctx.fillText(bannerText, 0, 0);
       ctx.restore();
     } else {
-      // For multiple characters, use (say) 90% of the available arc so that the text
-      // doesn’t run right to the edge. This gives a small margin.
-      const totalTextAngle = availableAngle * 0.9;
-      const letterSpacing = totalTextAngle / (bannerText.length - 1);
-      // Set the starting angle so that the text is centered along the banner.
-      const startTextAngle = arcMid - totalTextAngle / 2;
+      // For multiple characters, use a constant letter spacing so that the text
+      // "grows" from the center of the arc.
+      const constantLetterSpacing = 0.15; // Adjust this value (in radians) for desired spacing
+      const totalTextArc = constantLetterSpacing * (bannerText.length - 1);
+      const startTextAngle = arcMid - totalTextArc / 2;
 
       for (let i = 0; i < bannerText.length; i++) {
         const char = bannerText[bannerText.length - i - 1];
-        const angle = startTextAngle + i * letterSpacing;
+        const angle = startTextAngle + i * constantLetterSpacing;
         const x = centerX + textRadius * Math.cos(angle);
         const y = centerY + textRadius * Math.sin(angle);
         ctx.save();
         ctx.translate(x, y);
         // Rotate so the character is oriented tangentially.
-        ctx.rotate(angle + Math.PI * 1.5);
+        ctx.rotate(angle - Math.PI / 2);
         ctx.fillText(char, 0, 0);
         ctx.restore();
       }
     }
     ctx.restore();
-    // -----------------------------
-    // NEW TEXT DRAWING CODE ENDS
-    // -----------------------------
   };
 
   useEffect(() => {
