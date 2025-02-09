@@ -113,20 +113,24 @@ const ProfileBanner = () => {
         ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
         ctx.restore();
 
-        // Draw semi-transparent overlay
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Create circular cutout
-        ctx.globalCompositeOperation = 'destination-out';
+        // Use this code to fill only the area outside the circle:
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(centerX, centerY, canvas.width / 2, 0, Math.PI * 2);
-        ctx.fill();
+        // Draw a rectangle that covers the entire canvas...
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        // ...and then add a circular path for the inside area.
+        ctx.arc(centerX, centerY, canvas.width / 2, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        // The "evenodd" rule fills the region that is inside the rectangle but outside the circle.
+        ctx.fill("evenodd");
+        ctx.restore();
 
-        // Draw circle outline
-        ctx.globalCompositeOperation = 'source-over';
+        // Draw the circle outline over the image (if desired)
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, canvas.width / 2, 0, Math.PI * 2);
         ctx.stroke();
 
         // Update the final canvas
@@ -247,22 +251,44 @@ const ProfileBanner = () => {
       ctx.fillText(bannerText, 0, 0);
       ctx.restore();
     } else {
-      // For multiple characters, use a constant letter spacing so that the text
-      // "grows" from the center of the arc.
-      const constantLetterSpacing = 0.15; // Adjust this value (in radians) for desired spacing
-      const totalTextArc = constantLetterSpacing * (bannerText.length - 1);
-      const startTextAngle = arcMid - totalTextArc / 2;
+      // For multiple characters, adjust letter spacing using measured letter widths.
+      const letters = bannerText.split("").reverse(); // Reverse to match previous drawing order.
+      const gapPx = 4; // Fixed gap (in pixels) between letters; adjust as needed.
 
-      for (let i = 0; i < bannerText.length; i++) {
-        const char = bannerText[bannerText.length - i - 1];
-        const angle = startTextAngle + i * constantLetterSpacing;
-        const x = centerX + textRadius * Math.cos(angle);
-        const y = centerY + textRadius * Math.sin(angle);
+      // Measure each letter’s width in pixels.
+      const letterWidths = letters.map(letter => ctx.measureText(letter).width);
+
+      // Calculate the cumulative pixel offset for each letter’s center.
+      // The first letter’s center is at half its width.
+      const offsets: number[] = [];
+      let currentOffset = letterWidths[0] / 2;
+      offsets.push(currentOffset);
+      for (let i = 1; i < letters.length; i++) {
+        // Distance from the center of the previous letter to the center of the current letter:
+        // (previous half width) + gap + (current half width)
+        currentOffset += (letterWidths[i - 1] / 2) + gapPx + (letterWidths[i] / 2);
+        offsets.push(currentOffset);
+      }
+
+      // Determine the total arc (in pixels) occupied by the text (from the center of the first letter to that of the last).
+      const totalArcPx = offsets[offsets.length - 1] - offsets[0];
+      // Convert the total arc from pixels to radians.
+      const totalArcAngle = totalArcPx / textRadius;
+
+      // Compute the starting angle so that the text is centered along the arc.
+      // (We subtract the angular offset corresponding to the first letter’s center.)
+      const startTextAngle = arcMid - totalArcAngle / 2 - (offsets[0] / textRadius);
+
+      // Draw each letter at its computed angle.
+      for (let i = 0; i < letters.length; i++) {
+        const letterAngle = startTextAngle + (offsets[i] / textRadius);
+        const x = centerX + textRadius * Math.cos(letterAngle);
+        const y = centerY + textRadius * Math.sin(letterAngle);
         ctx.save();
         ctx.translate(x, y);
-        // Rotate so the character is oriented tangentially.
-        ctx.rotate(angle - Math.PI / 2);
-        ctx.fillText(char, 0, 0);
+        // Rotate so that the letter is tangential to the arc.
+        ctx.rotate(letterAngle - Math.PI / 2);
+        ctx.fillText(letters[i], 0, 0);
         ctx.restore();
       }
     }
@@ -302,6 +328,7 @@ const ProfileBanner = () => {
           value={bannerText}
           onChange={(e) => setBannerText(e.target.value)}
           placeholder="Enter banner text"
+          maxLength={18}  // Limits the text to 20 characters
         />
       </div>
 
