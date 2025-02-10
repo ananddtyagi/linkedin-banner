@@ -220,7 +220,7 @@ const ProfileBanner = () => {
     const textRadius = (bannerInnerRadius + radius) / 2;
     const bannerHeight = radius - bannerInnerRadius;
     const fontSize = bannerHeight * 0.5; // Adjust as needed
-    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.font = `900 ${fontSize}px Arial`;
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
