@@ -283,92 +283,109 @@ const ProfileBanner = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      {/* Always show the image upload option */}
-      <div className="space-y-4">
-        <Label htmlFor="image-upload">Upload Profile Picture</Label>
-        <Input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="cursor-pointer"
-        />
+    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600 flex flex-col items-center justify-center p-8">
+      <div className="bg-white rounded-xl shadow-lg max-w-3xl w-full p-8">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+          LinkedIn Banner Editor
+        </h1>
+        <div className="space-y-6">
+          {/* Image Upload Section */}
+          <div className="space-y-2">
+            <Label htmlFor="image-upload" className="text-lg font-semibold text-gray-700">
+              Upload Profile Picture
+            </Label>
+            <Input
+              id="image-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="cursor-pointer border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Show Banner Options & Preview only after an image is uploaded */}
+          {image && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="banner-text" className="text-lg font-semibold text-gray-700">
+                    Banner Text
+                  </Label>
+                  <Input
+                    id="banner-text"
+                    value={bannerText}
+                    onChange={(e) => setBannerText(e.target.value)}
+                    placeholder="Enter banner text"
+                    maxLength={18}
+                    className="border border-gray-300 rounded-md p-2"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="banner-color" className="text-lg font-semibold text-gray-700">
+                    Banner Color
+                  </Label>
+                  <Input
+                    id="banner-color"
+                    type="color"
+                    value={bannerColor}
+                    onChange={(e) => setBannerColor(e.target.value)}
+                    className="h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="text-color" className="text-lg font-semibold text-gray-700">
+                    Text Color
+                  </Label>
+                  <Input
+                    id="text-color"
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => setTextColor(e.target.value)}
+                    className="h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-6 mt-6">
+                <div className="relative aspect-square w-full max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
+                  <canvas
+                    ref={previewCanvasRef}
+                    className="absolute top-0 left-0 w-full h-full cursor-move"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                  />
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                  />
+                </div>
+                <div className="flex items-center justify-center space-x-4">
+                  <input
+                    type="range"
+                    min="10"
+                    max="500"
+                    value={zoom * 100}
+                    onChange={(e) => setZoom(Number(e.target.value) / 100)}
+                    className="w-64"
+                  />
+                  <span className="min-w-[60px] text-center font-medium">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                </div>
+                <Button
+                  onClick={handleDownload}
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow"
+                >
+                  Download Image
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-
-      {/* Only show banner options and preview once an image is uploaded */}
-      {image && (
-        <>
-          <div className="space-y-4">
-            <Label htmlFor="banner-text">Banner Text</Label>
-            <Input
-              id="banner-text"
-              value={bannerText}
-              onChange={(e) => setBannerText(e.target.value)}
-              placeholder="Enter banner text"
-              maxLength={18}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <Label htmlFor="banner-color">Banner Color</Label>
-            <Input
-              id="banner-color"
-              type="color"
-              value={bannerColor}
-              onChange={(e) => setBannerColor(e.target.value)}
-              className="h-12 cursor-pointer"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <Label htmlFor="text-color">Text Color</Label>
-            <Input
-              id="text-color"
-              type="color"
-              value={textColor}
-              onChange={(e) => setTextColor(e.target.value)}
-              className="h-12 cursor-pointer"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="relative aspect-square w-full max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
-              <canvas
-                ref={previewCanvasRef}
-                className="absolute top-0 left-0 w-full h-full cursor-move"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheel={handleWheel}
-              />
-              <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full pointer-events-none"
-              />
-            </div>
-
-            <div className="flex gap-4 items-center justify-center">
-              <input
-                type="range"
-                min="10"
-                max="500"
-                value={zoom * 100}
-                onChange={(e) => setZoom(Number(e.target.value) / 100)}
-                className="w-64"
-              />
-              <span className="min-w-[60px] text-center">
-                {Math.round(zoom * 100)}%
-              </span>
-            </div>
-
-            <Button onClick={handleDownload} className="w-full">
-              Download Image
-            </Button>
-          </div>
-        </>
-      )}
     </div>
   );
 };
