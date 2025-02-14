@@ -3,10 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface FileReaderEvent extends ProgressEvent<FileReader> {
-  target: FileReader;
-}
+import posthog from 'posthog-js'
 
 const CircularImage = ({ src, className }: { src: string, className?: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,7 +80,6 @@ const ProfileBanner = () => {
   const [textColor, setTextColor] = useState("#ffffff");
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDraggingRef = useRef(false);
@@ -98,7 +94,6 @@ const ProfileBanner = () => {
         if (typeof result === 'string') {
           const img = new Image();
           img.onload = () => {
-            setImageSize({ width: img.width, height: img.height });
             setImage(result);
             // Reset zoom and position when a new image is uploaded
             setZoom(1);
@@ -109,6 +104,8 @@ const ProfileBanner = () => {
       };
       reader.readAsDataURL(file);
     }
+    posthog.capture('image_uploaded')
+
   };
 
   // Handle mouse/touch events for dragging
@@ -357,6 +354,7 @@ const ProfileBanner = () => {
       link.href = canvasRef.current.toDataURL("image/png");
       link.click();
     }
+    posthog.capture('image_downloaded')
   };
 
   return (
