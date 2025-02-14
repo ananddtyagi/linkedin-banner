@@ -360,15 +360,15 @@ const ProfileBanner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col justify-between">
       <div className="flex flex-col items-center">
         {/* Title at the top */}
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mt-4 md:mt-8 mb-4 md:mb-8 text-center px-4">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500 mt-8 mb-8 text-center tracking-tight px-4">
           LinkedIn Banner Editor
         </h1>
 
         {/* Carousel section */}
-        <div className="w-full overflow-hidden mb-4 md:mb-8">
+        <div className="w-full overflow-hidden mb-8 md:mb-10 rounded-xl ">
           <div
             ref={carouselRef}
             className="flex whitespace-nowrap"
@@ -381,21 +381,21 @@ const ProfileBanner = () => {
               <CircularImage
                 key={index}
                 src={`/example${num}.png`}
-                className="h-32 w-32 md:h-48 md:w-48 inline-block mx-2"
+                className="h-32 w-32 md:h-48 md:w-48 inline-block mx-2 rounded-full drop-shadow-lg transition-transform duration-300 hover:scale-110"
               />
             ))}
           </div>
         </div>
 
         {/* Main content area */}
-        <div className="bg-white rounded-xl shadow-lg w-[95%] max-w-4xl mx-auto p-4 md:p-8 mb-8">
+        <div className={`bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl transition-transform transform ${!image ? 'hover:scale-105' : ''} w-[95%] max-w-4xl mx-auto p-8 md:p-12 mb-12 border border-gray-100`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
             {!image ? (
               <div className="md:col-span-2 flex flex-col items-center justify-center space-y-4">
                 <Label htmlFor="image-upload" className="text-lg md:text-xl font-semibold text-gray-700 block text-center">
                   Upload Your Profile Picture
                 </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-6 text-center w-full max-w-md">
+                <div className="border-2 border-dashed border-gray-300 bg-gradient-to-br to-gray-50 rounded-2xl p-8 md:p-10 text-center w-full transition duration-300 transform hover:-translate-y-1 hover:scale-105 shadow-sm hover:shadow-xl">
                   <Input
                     id="image-upload"
                     type="file"
@@ -418,7 +418,7 @@ const ProfileBanner = () => {
                   <Label htmlFor="image-upload" className="text-lg md:text-xl font-semibold text-gray-700 block text-center">
                     Upload Your Profile Picture
                   </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-6 text-center">
+                  <div className="border-2 border-dashed border-gray-300 bg-gradient-to-br to-gray-50 rounded-2xl p-8 md:p-10 text-center w-full transition duration-300 transform hover:-translate-y-1 hover:scale-105 shadow-sm hover:shadow-xl">
                     <Input
                       id="image-upload"
                       type="file"
@@ -462,7 +462,7 @@ const ProfileBanner = () => {
                         onChange={(e) => setBannerText(e.target.value)}
                         placeholder="Enter banner text"
                         maxLength={18}
-                        className="border border-gray-300 rounded-md p-2"
+                        className="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
                       />
                     </div>
 
@@ -476,7 +476,7 @@ const ProfileBanner = () => {
                           type="color"
                           value={bannerColor}
                           onChange={(e) => setBannerColor(e.target.value)}
-                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-lg shadow-sm"
                         />
                       </div>
                       <div className="space-y-2">
@@ -488,7 +488,7 @@ const ProfileBanner = () => {
                           type="color"
                           value={textColor}
                           onChange={(e) => setTextColor(e.target.value)}
-                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-lg shadow-sm"
                         />
                       </div>
                     </div>
@@ -514,7 +514,7 @@ const ProfileBanner = () => {
 
                     <Button
                       onClick={handleDownload}
-                      className="w-full py-2 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow"
+                      className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg transform transition-all hover:scale-105"
                     >
                       Download Image
                     </Button>
@@ -527,8 +527,8 @@ const ProfileBanner = () => {
       </div>
 
       {/* Credit text */}
-      <div className="w-full py-4 text-center text-gray-600 text-sm bg-gradient-to-r from-indigo-50 to-blue-100">
-        Made by <a href="https://linkedin.com/in/ananddtyagi" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">Anand</a>
+      <div className="w-full py-4 text-center text-gray-600 text-sm border-t border-gray-200">
+        © 2025, Made with ♥ by <a href="https://linkedin.com/in/ananddtyagi" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-900">Anand</a>
       </div>
     </div>
   );
