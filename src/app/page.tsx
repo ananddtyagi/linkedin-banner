@@ -368,10 +368,10 @@ const ProfileBanner = () => {
         </h1>
 
         {/* Carousel section */}
-        <div className="w-full overflow-hidden mb-8 md:mb-10 rounded-xl ">
+        <div className="w-full overflow-hidden mb-8 md:mb-10 rounded-xl py-4">
           <div
             ref={carouselRef}
-            className="flex whitespace-nowrap"
+            className="flex whitespace-nowrap px-2"
             style={{
               transform: `translateX(-${scrollPosition}px)`,
             }}
@@ -381,7 +381,7 @@ const ProfileBanner = () => {
               <CircularImage
                 key={index}
                 src={`/example${num}.png`}
-                className="h-32 w-32 md:h-48 md:w-48 inline-block mx-2 rounded-full drop-shadow-lg transition-transform duration-300 hover:scale-110"
+                className="h-32 w-32 md:h-48 md:w-48 inline-block mx-2 rounded-full drop-shadow-lg transition-transform duration-300 hover:scale-110 hover:z-10"
               />
             ))}
           </div>
