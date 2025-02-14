@@ -4,11 +4,77 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface FileReaderEvent extends ProgressEvent {
+interface FileReaderEvent extends ProgressEvent<FileReader> {
   target: FileReader;
 }
 
+const CircularImage = ({ src, className }: { src: string, className?: string }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      // Set canvas dimensions
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Create circular clipping path
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Draw image
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = src;
+  }, [src]);
+
+  return <canvas ref={canvasRef} className={className} />;
+};
+
 const ProfileBanner = () => {
+  // Add state for carousel
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Add carousel animation effect
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const scrollSpeed = 1; // Pixels per frame
+    let animationFrameId: number;
+
+    const scroll = () => {
+      setScrollPosition((prev) => {
+        const newPosition = prev + scrollSpeed;
+        if (newPosition >= carousel.scrollWidth / 2) {
+          return 0;
+        }
+        return newPosition;
+      });
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
+
   // Initialize banner text to a default value.
   // (You can change this to an empty string if you prefer no default text.)
   const [bannerText, setBannerText] = useState("#NOT HIRING");
@@ -27,16 +93,19 @@ const ProfileBanner = () => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e: FileReaderEvent) => {
-        const img = new Image();
-        img.onload = () => {
-          setImageSize({ width: img.width, height: img.height });
-          setImage(e.target.result as string);
-          // Reset zoom and position when a new image is uploaded
-          setZoom(1);
-          setPosition({ x: 0, y: 0 });
-        };
-        img.src = e.target.result as string;
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          const img = new Image();
+          img.onload = () => {
+            setImageSize({ width: img.width, height: img.height });
+            setImage(result);
+            // Reset zoom and position when a new image is uploaded
+            setZoom(1);
+            setPosition({ x: 0, y: 0 });
+          };
+          img.src = result;
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -147,21 +216,32 @@ const ProfileBanner = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Copy the preview canvas onto the final canvas
+    // Copy dimensions from preview canvas
     canvas.width = previewCanvasRef.current.width;
     canvas.height = previewCanvasRef.current.height;
-    ctx.drawImage(previewCanvasRef.current, 0, 0);
 
-    // Since an image is uploaded, always draw the banner shape.
+    // Clear the canvas with a transparent background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = canvas.width / 2;
 
-    // Adjusted banner parameters
-    const bannerInnerRadius = radius * 0.7;  // Increased inner radius
-    const startAngle = Math.PI * 0.25;         // Earlier start angle
-    const endAngle = Math.PI * 1.15;           // Later end angle
-    const fadeLength = Math.PI * 0.2;          // Longer fade length
+    // Create a clipping path for the circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Draw the image from preview canvas
+    ctx.drawImage(previewCanvasRef.current, 0, 0);
+    ctx.restore();
+
+    // Banner parameters
+    const bannerInnerRadius = radius * 0.7;
+    const startAngle = Math.PI * 0.25;
+    const endAngle = Math.PI * 1.15;
+    const fadeLength = Math.PI * 0.2;
 
     // Draw the solid center portion of the banner
     ctx.beginPath();
@@ -211,15 +291,14 @@ const ProfileBanner = () => {
     ctx.fillStyle = endGradient;
     ctx.fill();
 
-    // Draw banner text if any text is provided.
-    // (If bannerText is blank, only the banner shape is shown.)
+    // Draw banner text if any text is provided
     ctx.save();
     const bannerStartAngle = startAngle + fadeLength;
     const bannerEndAngle = endAngle - fadeLength;
     const arcMid = (bannerStartAngle + bannerEndAngle) / 2;
     const textRadius = (bannerInnerRadius + radius) / 2;
     const bannerHeight = radius - bannerInnerRadius;
-    const fontSize = bannerHeight * 0.5; // Adjust as needed
+    const fontSize = bannerHeight * 0.5;
     ctx.font = `900 ${fontSize}px Arial`;
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
@@ -227,7 +306,6 @@ const ProfileBanner = () => {
 
     if (bannerText.trim() !== "") {
       if (bannerText.length === 1) {
-        // Single character: center it along the arc.
         const angle = arcMid;
         const x = centerX + textRadius * Math.cos(angle);
         const y = centerY + textRadius * Math.sin(angle);
@@ -237,9 +315,8 @@ const ProfileBanner = () => {
         ctx.fillText(bannerText, 0, 0);
         ctx.restore();
       } else {
-        // Multiple characters: adjust spacing using measured letter widths.
         const letters = bannerText.split("").reverse();
-        const gapPx = 4; // Fixed gap in pixels between letters
+        const gapPx = 4;
 
         const letterWidths = letters.map(letter => ctx.measureText(letter).width);
         const offsets: number[] = [];
@@ -283,108 +360,175 @@ const ProfileBanner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-indigo-600 flex flex-col items-center justify-center p-8">
-      <div className="bg-white rounded-xl shadow-lg max-w-3xl w-full p-8">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-100 flex flex-col justify-between">
+      <div className="flex flex-col items-center">
+        {/* Title at the top */}
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mt-4 md:mt-8 mb-4 md:mb-8 text-center px-4">
           LinkedIn Banner Editor
         </h1>
-        <div className="space-y-6">
-          {/* Image Upload Section */}
-          <div className="space-y-2">
-            <Label htmlFor="image-upload" className="text-lg font-semibold text-gray-700">
-              Upload Profile Picture
-            </Label>
-            <Input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="cursor-pointer border border-gray-300 rounded-md p-2"
-            />
+
+        {/* Carousel section */}
+        <div className="w-full overflow-hidden mb-4 md:mb-8">
+          <div
+            ref={carouselRef}
+            className="flex whitespace-nowrap"
+            style={{
+              transform: `translateX(-${scrollPosition}px)`,
+            }}
+          >
+            {/* Double the images to create seamless loop */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, index) => (
+              <CircularImage
+                key={index}
+                src={`/example${num}.png`}
+                className="h-32 w-32 md:h-48 md:w-48 inline-block mx-2"
+              />
+            ))}
           </div>
-
-          {/* Show Banner Options & Preview only after an image is uploaded */}
-          {image && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="banner-text" className="text-lg font-semibold text-gray-700">
-                    Banner Text
-                  </Label>
-                  <Input
-                    id="banner-text"
-                    value={bannerText}
-                    onChange={(e) => setBannerText(e.target.value)}
-                    placeholder="Enter banner text"
-                    maxLength={18}
-                    className="border border-gray-300 rounded-md p-2"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="banner-color" className="text-lg font-semibold text-gray-700">
-                    Banner Color
-                  </Label>
-                  <Input
-                    id="banner-color"
-                    type="color"
-                    value={bannerColor}
-                    onChange={(e) => setBannerColor(e.target.value)}
-                    className="h-12 w-full cursor-pointer border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="text-color" className="text-lg font-semibold text-gray-700">
-                    Text Color
-                  </Label>
-                  <Input
-                    id="text-color"
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    className="h-12 w-full cursor-pointer border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-6 mt-6">
-                <div className="relative aspect-square w-full max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
-                  <canvas
-                    ref={previewCanvasRef}
-                    className="absolute top-0 left-0 w-full h-full cursor-move"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onWheel={handleWheel}
-                  />
-                  <canvas
-                    ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                  />
-                </div>
-                <div className="flex items-center justify-center space-x-4">
-                  <input
-                    type="range"
-                    min="10"
-                    max="500"
-                    value={zoom * 100}
-                    onChange={(e) => setZoom(Number(e.target.value) / 100)}
-                    className="w-64"
-                  />
-                  <span className="min-w-[60px] text-center font-medium">
-                    {Math.round(zoom * 100)}%
-                  </span>
-                </div>
-                <Button
-                  onClick={handleDownload}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow"
-                >
-                  Download Image
-                </Button>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* Main content area */}
+        <div className="bg-white rounded-xl shadow-lg w-[95%] max-w-4xl mx-auto p-4 md:p-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+            {!image ? (
+              <div className="md:col-span-2 flex flex-col items-center justify-center space-y-4">
+                <Label htmlFor="image-upload" className="text-lg md:text-xl font-semibold text-gray-700 block text-center">
+                  Upload Your Profile Picture
+                </Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-6 text-center w-full max-w-md">
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <div className="space-y-2">
+                      <div className="text-4xl md:text-5xl text-gray-400">📷</div>
+                      <p className="text-gray-600">Click to upload or drag and drop</p>
+                      <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <Label htmlFor="image-upload" className="text-lg md:text-xl font-semibold text-gray-700 block text-center">
+                    Upload Your Profile Picture
+                  </Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-6 text-center">
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="space-y-2">
+                        <div className="text-4xl md:text-5xl text-gray-400">📷</div>
+                        <p className="text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-sm text-gray-400">PNG, JPG up to 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="relative aspect-square w-full bg-gray-100 rounded-lg overflow-hidden">
+                    <canvas
+                      ref={previewCanvasRef}
+                      className="absolute top-0 left-0 w-full h-full cursor-move touch-none"
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      onWheel={handleWheel}
+                    />
+                    <canvas
+                      ref={canvasRef}
+                      className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                    />
+                  </div>
+                </div>
+                {image && (
+                  <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="banner-text" className="text-base md:text-lg font-semibold text-gray-700">
+                        Banner Text
+                      </Label>
+                      <Input
+                        id="banner-text"
+                        value={bannerText}
+                        onChange={(e) => setBannerText(e.target.value)}
+                        placeholder="Enter banner text"
+                        maxLength={18}
+                        className="border border-gray-300 rounded-md p-2"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="banner-color" className="text-base md:text-lg font-semibold text-gray-700">
+                          Banner Color
+                        </Label>
+                        <Input
+                          id="banner-color"
+                          type="color"
+                          value={bannerColor}
+                          onChange={(e) => setBannerColor(e.target.value)}
+                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="text-color" className="text-base md:text-lg font-semibold text-gray-700">
+                          Text Color
+                        </Label>
+                        <Input
+                          id="text-color"
+                          type="color"
+                          value={textColor}
+                          onChange={(e) => setTextColor(e.target.value)}
+                          className="h-10 md:h-12 w-full cursor-pointer border border-gray-300 rounded-md"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-base md:text-lg font-semibold text-gray-700">
+                        Image Zoom
+                      </Label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="range"
+                          min="10"
+                          max="500"
+                          value={zoom * 100}
+                          onChange={(e) => setZoom(Number(e.target.value) / 100)}
+                          className="flex-1"
+                        />
+                        <span className="min-w-[60px] text-center font-medium">
+                          {Math.round(zoom * 100)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleDownload}
+                      className="w-full py-2 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow"
+                    >
+                      Download Image
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Credit text */}
+      <div className="w-full py-4 text-center text-gray-600 text-sm bg-gradient-to-r from-indigo-50 to-blue-100">
+        Made by <a href="https://linkedin.com/in/ananddtyagi" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-800">Anand</a>
       </div>
     </div>
   );
