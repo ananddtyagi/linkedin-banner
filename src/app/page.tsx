@@ -109,27 +109,55 @@ const ProfileBanner = () => {
   };
 
   // Handle mouse/touch events for dragging
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     isDraggingRef.current = true;
-    lastPositionRef.current = { x: e.clientX, y: e.clientY };
+    if ('touches' in e) {
+      lastPositionRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      lastPositionRef.current = { x: e.clientX, y: e.clientY };
+    }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDraggingRef.current) return;
 
-    const deltaX = e.clientX - lastPositionRef.current.x;
-    const deltaY = e.clientY - lastPositionRef.current.y;
+    let currentX: number, currentY: number;
+    if ('touches' in e) {
+      currentX = e.touches[0].clientX;
+      currentY = e.touches[0].clientY;
+    } else {
+      currentX = e.clientX;
+      currentY = e.clientY;
+    }
+
+    const deltaX = currentX - lastPositionRef.current.x;
+    const deltaY = currentY - lastPositionRef.current.y;
 
     setPosition(prev => ({
       x: prev.x + deltaX,
       y: prev.y + deltaY
     }));
 
-    lastPositionRef.current = { x: e.clientX, y: e.clientY };
+    lastPositionRef.current = { x: currentX, y: currentY };
   };
 
   const handleMouseUp = () => {
     isDraggingRef.current = false;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling while dragging
+    handleMouseDown(e);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling while dragging
+    handleMouseMove(e);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleMouseUp();
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -440,6 +468,9 @@ const ProfileBanner = () => {
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
                       onMouseLeave={handleMouseUp}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       onWheel={handleWheel}
                     />
                     <canvas
